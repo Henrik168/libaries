@@ -38,14 +38,16 @@ class ColoredFormatter(logging.Formatter):
 
 
 class Log:
-    def __init__(self, name: str = 'logger', level: int = 20, path: str = './log/'):
+    def __init__(self,
+                 name: str = 'custom_logger',
+                 level: int = 20,
+                 path: str = './log/'):
         # create logger
-        self.logger = logging.getLogger('custom_logger')
+        self.logger = logging.getLogger(name)
         self.logger.setLevel(level)  # Debug = 10 #INFO = 20 #WARNING = 30 # ERROR=40
 
-        # create console handler and set level to debug
+        # create console handler
         self.ch = logging.StreamHandler()
-        self.ch.setLevel(level)
 
         # add formatter to ch
         self.ch.setFormatter(ColoredFormatter())
@@ -57,7 +59,6 @@ class Log:
         self.path = make_path(path)
         self.timestamp = datetime.datetime.now().strftime("%Y%m%d")
         self.fh = logging.FileHandler(os.path.join(self.path, str(self.timestamp) + '_python.log'))
-        self.fh.setLevel(level)
 
         # create formatter
         self.formatter = logging.Formatter(
@@ -70,6 +71,9 @@ class Log:
         # add fh to logger
         self.logger.addHandler(self.fh)
 
+        # setting logging level
+        self.set_level(level)
+
         self.logger.info(f"Logger started. Write Logfile to: {self.path}")
 
     def set_level(self, level: int) -> None:
@@ -77,8 +81,8 @@ class Log:
         Debug = 10 INFO = 20 WARNING = 30 ERROR=40
         """
         self.logger.setLevel(level)
-        self.ch.setLevel(level)
         self.fh.setLevel(level)
+        self.ch.setLevel(min(40, level + 10))
 
     def set_path(self, path: str) -> None:
         """

@@ -26,7 +26,7 @@ def str2timedelta(str_time: str, date_format: str = '%H:%M:%S') -> timedelta:
     return timedelta(hours=dt_time.hour, minutes=dt_time.minute, seconds=dt_time.second)
 
 
-def timestamp2strdatetime(timestamp: time, date_format: str = '%d.%m.%Y %H:%M:%S') -> str:
+def time2str(timestamp: time, date_format: str = '%d.%m.%Y %H:%M:%S') -> str:
     """
     convert a time object to string.
     :param timestamp: time object (float)
@@ -37,7 +37,18 @@ def timestamp2strdatetime(timestamp: time, date_format: str = '%d.%m.%Y %H:%M:%S
     return datetime.fromtimestamp(timestamp).strftime(date_format)
 
 
-def timestamp2datetime(timestamp: time) -> datetime:
+def datetime2str(timestamp: datetime = datetime.now(), date_format: str = '%d.%m.%Y %H:%M:%S') -> str:
+    """
+
+    :param timestamp:
+    :param date_format: '%d.%m.%Y %H:%M:%S'
+                        '%Y%m%d%H%M%S'
+    :return:
+    """
+    return timestamp.strftime(date_format)
+
+
+def time2datetime(timestamp: time) -> datetime:
     """
     convert time object to datetime
     :param timestamp:
@@ -55,7 +66,7 @@ def chhop_microseconds(delta: timedelta) -> timedelta:
     return delta - timedelta(microseconds=delta.microseconds)
 
 
-def time2minute_fraction(delta: timedelta) -> float:
+def timedelta2minute_fraction(delta: timedelta) -> float:
     """
     convert timedelta object to a fraction of minutes
     :param delta:

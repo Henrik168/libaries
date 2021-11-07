@@ -42,16 +42,19 @@ def read_file_binary(file_path: str) -> Generator:
         return (line.strip() for line in file.readlines())
 
 
-def write_file(file_path: str, rows: list) -> None:
+def write_file(file_path: str, rows: list, add_line_sep: bool = True) -> None:
     """
     write a list to a file. Each row reperesent a line
+    :param add_line_sep:
     :param rows: List of Rows to write to file
     :param file_path: path to the file
     :return:
     """
+
     with open(file_path, 'w') as file:
         for row in rows:
-            file.writelines(row)
+            file.write(str(row))
+            file.write('\n') if add_line_sep else None
 
 
 def read_csv(file_path: str, encoding: str = 'utf-8-sig', delimiter: str = ';') -> list:

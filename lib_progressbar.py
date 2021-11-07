@@ -1,0 +1,35 @@
+# Global libaries
+import sys
+from typing import Generator, Iterable
+from datetime import datetime, timedelta
+
+# local Libaries
+from lib_time import chhop_microseconds
+
+def progress_bar(item_iterable: Iterable, bar_length: int = 60, prefix: str = 'PROCESSING: ') -> Generator:
+    """
+    Usage Example:
+    for i in progress_bar(range(100)):
+        sleep(0.1)
+    :param prefix: 'PROCESSING: '
+    :param item_iterable:
+    :param bar_length: std = 60
+    :return:
+    """
+    start_time = datetime.now()
+    item_count = len(item_iterable)
+    for index, item in enumerate(item_iterable):
+        index += 1  # add offset to index
+        bar_progress = int(bar_length * index / item_count)
+        runtime = datetime.now() - start_time
+        remaining_time = max(runtime / index * item_count - runtime, timedelta(seconds=0))
+        string = str(f'\r{prefix}'
+                     f'[{"#" * bar_progress}{"." * (bar_length - bar_progress)}] '
+                     f'{index}/{item_count} '
+                     f'Runtime: {chhop_microseconds(runtime)} '
+                     f'Remaining: {chhop_microseconds(remaining_time)}')
+        sys.stdout.write(string)
+        sys.stdout.flush()
+        yield item
+    sys.stdout.write(" - Done! \n")
+    sys.stdout.flush()
