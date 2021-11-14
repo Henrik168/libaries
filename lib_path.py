@@ -153,7 +153,8 @@ def get_dirs(root_path: str) -> List[DirectoryItem]:
     root_path = get_path(root_path)
     with scandir(root_path) as dir_entry_list:
         return [DirectoryItem(folder_list=dir_entry.path.split(sep),
-                              root_path=dir_entry.path)
+                              root_path=dir_entry.path,
+                              file_list=[])
                 for dir_entry in dir_entry_list
                 if dir_entry.is_dir()]
 
