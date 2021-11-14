@@ -3,19 +3,18 @@
 # global libraries
 import sys
 import shutil
-from os import path, makedirs, walk, sep
+from os import path, makedirs, walk, sep, scandir
 from datetime import datetime
 from dataclasses import dataclass
-
-# local libraries
 from typing import List
 
-from lib_str import check_string
+
+# local libraries
 
 
 def get_path(input_path: str) -> str:
     """
-    Return the absolut path if path relativ to the main.py is passed in
+    Return the absolut path if path relativ to the test_progressbar.py is passed in
     :param input_path:
     :return:
     """
@@ -29,8 +28,9 @@ def get_dir_path(input_path: str) -> str:
     :return:
     """
     output_path = get_path(input_path)
-    if not path.isdir(output_path):
-        raise NotADirectoryError(f"Directory: {output_path} does not exists!")
+    path_items = output_path.split(sep)
+    if "." in path_items[-1]:
+        output_path = path.dirname(output_path)
     return output_path
 
 
@@ -77,13 +77,17 @@ def get_DiskSpace(input_path):
     return free
 
 
-def get_timestamp(input_path: str) -> datetime:
+def get_timestamp(input_path: str, create: bool = False) -> datetime:
     """
     returns datetime timestamp of path_item
+    :param create:
     :param input_path:
     :return:
     """
-    return datetime.fromtimestamp(path.getctime(input_path))
+    if create:
+        return datetime.fromtimestamp(path.getctime(input_path))
+    else:
+        return datetime.fromtimestamp(path.getmtime(input_path))
 
 
 @dataclass
@@ -93,46 +97,73 @@ class DirectoryItem:
     file_list: list
 
 
-class Crawler:
-    def __init__(self,
-                 relative: bool = False,
-                 chars_list: list = None,
-                 min_date: datetime = None,
-                 max_date: datetime = None):
-        """
-        Create new instance of FileCrawler
-        :param relative: if True returns just relative paths
-        """
-        self._relative = relative
-        self._chars_list = chars_list
-        self._min_date = min_date
-        self._max_date = max_date if max_date else datetime.now()
+def check_date(path_str: str,
+               min_date: datetime = None,
+               max_date: datetime = None) -> bool:
+    """
+    :param path_str:
+    :param max_date:
+    :param min_date:
+    :param file_path: path to the file
+    :return: return true if file age is within boundaries (min - max Date).
+    """
+    if not min_date:
+        return True
+    if not max_date:
+        max_date = datetime.now()
+    return min_date < get_timestamp(get_path(path_str)) < max_date
 
-    def check_date(self, file_path: str) -> bool:
-        """
-        :param file_path: path to the file
-        :return: return true if file age is within boundaries (min - max Date).
-        """
-        return self._min_date < get_timestamp(get_file_path(file_path)) < self._max_date
 
-    def run(self, root_path: str) -> List[DirectoryItem]:
-        """
-        Find all files in actual folder and all subfolder
-        :param root_path: [str]
-        :return: return a list of lists, each root path represents a row.
-         first element of a row is path_items, second is the path, third is list of files
-        """
-        root_path = get_dir_path(root_path)
-        result = []
-        for root, dir_list, file_list in walk(root_path):
-            if self._relative:
-                root = path.relpath(root, root_path)
-            if self._min_date:
-                file_list = [file for file in file_list if self.check_date(path.join(root, file))]
-            if self._chars_list:
-                file_list = [file for file in file_list if check_string(path.join(root, file), self._chars_list)]
-            if file_list:  # store if files available in directory
-                result.append(DirectoryItem(folder_list=root.split(sep),
-                                            root_path=root,
-                                            file_list=file_list))
-        return result
+def check_string(input_str: str,
+                 char_list: list = None,
+                 type_any: bool = True) -> bool:
+    if not char_list:
+        return True
+    if type_any:
+        return any((char in input_str) for char in char_list)
+    else:
+        return all((char in input_str) for char in char_list)
+
+
+def filter_path(path_str: str,
+                min_date: datetime = None,
+                max_date: datetime = None,
+                char_list: list = None):
+    return all((check_date(path_str, min_date, max_date),
+                check_string(path_str, char_list)))
+
+
+def crawl(root_path: str) -> List[DirectoryItem]:
+    """
+    Find all files in actual folder and all subfolder
+    :param root_path: [str]
+    :return: return a list of lists, each root path represents a row.
+     first element of a row is path_items, second is the path, third is list of files
+    """
+    root_path = get_path(root_path)
+
+    return [DirectoryItem(folder_list=root.split(sep),
+                          root_path=root,
+                          file_list=files)
+            for root, dirs, files in walk(root_path)
+            if files]
+
+
+def get_dirs(root_path: str) -> List[DirectoryItem]:
+    root_path = get_path(root_path)
+    with scandir(root_path) as dir_entry_list:
+        return [DirectoryItem(folder_list=dir_entry.path.split(sep),
+                              root_path=dir_entry.path)
+                for dir_entry in dir_entry_list
+                if dir_entry.is_dir()]
+
+
+def get_files(root_path: str) -> DirectoryItem:
+    root_path = get_path(root_path)
+    with scandir(root_path) as dir_entry_list:
+        files = [dir_entry.name
+                 for dir_entry in dir_entry_list
+                 if not dir_entry.name.startswith(".") and dir_entry.is_file()]
+        return DirectoryItem(folder_list=root_path.split(sep),
+                             root_path=root_path,
+                             file_list=files)
