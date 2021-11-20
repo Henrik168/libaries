@@ -88,7 +88,7 @@ def write_csv(file_path: str, rows: list, decimal_char: str = ",") -> None:
         return data
 
     mode = "a" if path.isfile(file_path) else "w"
-    with open(file_path, 'w', newline='') as csv_file:
+    with open(file_path, mode, newline='') as csv_file:
         csv_writer = writer(csv_file, delimiter=';', quotechar='|', quoting=QUOTE_MINIMAL, dialect='excel')
         for row in rows:
             parsed_row = [decimal_parser(item) for item in row]
