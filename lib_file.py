@@ -3,8 +3,8 @@
 # global libraries
 from datetime import datetime
 from os import path
-import csv
-from typing import Generator
+from csv import reader, writer, QUOTE_MINIMAL
+from typing import Generator, Any
 
 
 def get_file_timestamp(file_path: str, str_format: str = '%Y.%m.%d') -> str:
@@ -50,8 +50,8 @@ def write_file(file_path: str, rows: list, add_line_sep: bool = True) -> None:
     :param file_path: path to the file
     :return:
     """
-
-    with open(file_path, 'w') as file:
+    mode = "a" if path.isfile(file_path) else "w"
+    with open(file_path, mode) as file:
         for row in rows:
             file.write(str(row))
             file.write('\n') if add_line_sep else None
@@ -69,20 +69,27 @@ def read_csv(file_path: str, encoding: str = 'utf-8-sig', delimiter: str = ';') 
     :return: a list, each row reprsents a line of file
     """
     with open(file_path, 'r', encoding=encoding, newline='') as csv_file:
-        reader = csv.reader(csv_file, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-        return [row for row in reader]
+        csv_reader = reader(csv_file, delimiter=delimiter, quoting=QUOTE_MINIMAL, lineterminator='\n')
+        return [row for row in csv_reader]
 
 
-def write_csv(file_path: str, rows: list, header_row: list = None) -> None:
+def write_csv(file_path: str, rows: list, decimal_char: str = ",") -> None:
     """
     write a nested list to csv File. Outer List defines the rows, inner List defines the columns
-    :param header_row: A list of Header elements
+    :param decimal_char:
     :param file_path: path to the file
     :param rows: nested list which represents a table
     :return:
     """
+
+    def decimal_parser(data: Any) -> str:
+        if isinstance(data, float):
+            data = str(data).replace(".", decimal_char)
+        return data
+
+    mode = "a" if path.isfile(file_path) else "w"
     with open(file_path, 'w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL, dialect='excel')
-        if header_row:
-            csv_writer.writerow(header_row)
-        csv_writer.writerows(rows)
+        csv_writer = writer(csv_file, delimiter=';', quotechar='|', quoting=QUOTE_MINIMAL, dialect='excel')
+        for row in rows:
+            parsed_row = [decimal_parser(item) for item in row]
+            csv_writer.writerow(parsed_row)
